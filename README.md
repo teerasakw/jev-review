@@ -1,5 +1,10 @@
 # Jev Review
 
+> Local 9router variant: requests go to `http://localhost:20128/v1/systemone`
+> with model `openrouter/typesafe/jev-1.13`. The MCP server uses
+> `NINEROUTER_API_KEY` or OpenCode's existing saved 9router credential.
+> Restart the MCP client after rebuilding `dist/server.js`.
+
 <div align="center">
 
 **Continuous software-quality review for AI coding agents, powered by [Jev](https://typesafe.ai/).**
@@ -45,13 +50,14 @@ https://github.com/user-attachments/assets/0ff9f873-0652-4826-af3d-6bb4f42c70b1
 Requirements:
 
 - Node.js 20 or newer
-- A Jev API key from the [TypeSafe console](https://console.typesafe.ai/)
+- A running local 9Router gateway at `http://localhost:20128/v1/systemone`, with model `openrouter/typesafe/jev-1.13` available
+- `NINEROUTER_API_KEY` in the MCP process environment, or an existing 9router login saved by OpenCode on this machine
 - Claude Code, Codex, Cursor, or OpenCode
 
-Set your API key before starting the coding agent:
+On hosts without OpenCode's saved 9router login, set the gateway key before starting the coding agent. For example, in PowerShell:
 
-```bash
-export JEV_API_KEY="your-key"
+```powershell
+$env:NINEROUTER_API_KEY = '<your 9router gateway key>'
 ```
 
 Install Jev Review directly from GitHub—no npm publication is required:
