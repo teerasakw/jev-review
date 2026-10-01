@@ -1,5 +1,10 @@
 # Jev Review
 
+> [!NOTE]
+> This release sends reviews to the local 9Router gateway at `http://localhost:20128/v1/systemone`
+> using model `openrouter/typesafe/jev-1.13`. Set `NINEROUTER_API_KEY` in the MCP
+> process environment; OpenCode's saved login is not read by this server.
+
 <div align="center">
 
 **Continuous software-quality review for AI coding agents, powered by [Jev](https://typesafe.ai/).**
@@ -16,7 +21,7 @@
 Jev Review runs as a local MCP server and gives Claude Code, Codex, Cursor, and OpenCode structured quality scores while they work. Your coding agent remains responsible for diagnosing weaknesses and changing the code; Jev supplies a fast scalar signal across correctness, complexity, changeability, modularity, tests, security, and other independent quality dimensions.
 
 > [!IMPORTANT]
-> **Your API key stays on your machine.** Jev Review has no hosted backend, database, telemetry service, or author-operated proxy. The only remote request is sent directly to the configured Jev API.
+> **The MCP server sends requests only to the local 9Router gateway.** Jev Review has no hosted backend, database, telemetry service, or author-operated proxy. The gateway may forward review context and credentials to its configured provider; consult your gateway's policy before sending sensitive content.
 
 ## Demo
 
@@ -36,7 +41,7 @@ https://github.com/user-attachments/assets/0ff9f873-0652-4826-af3d-6bb4f42c70b1
 | **Supported clients** | Claude Code, Codex, Cursor, OpenCode |
 | **Distribution** | This GitHub repository—no npm publication |
 | **Runtime** | Local Node.js process over MCP stdio |
-| **Remote access** | Direct requests to Jev using your API key |
+| **Remote access** | Requests to the local 9Router gateway using its API key |
 | **MCP tools** | One focused tool: `jev_review` |
 | **Code changes** | Always performed by the primary coding agent |
 
@@ -45,19 +50,20 @@ https://github.com/user-attachments/assets/0ff9f873-0652-4826-af3d-6bb4f42c70b1
 Requirements:
 
 - Node.js 20 or newer
-- A Jev API key from the [TypeSafe console](https://console.typesafe.ai/)
+- A running local 9Router gateway at `http://localhost:20128/v1/systemone` with model `openrouter/typesafe/jev-1.13` available
+- `NINEROUTER_API_KEY` available to the MCP process
 - Claude Code, Codex, Cursor, or OpenCode
 
 Set your API key before starting the coding agent:
 
 ```bash
-export JEV_API_KEY="your-key"
+export NINEROUTER_API_KEY="your-gateway-key"
 ```
 
 Install Jev Review directly from GitHub—no npm publication is required:
 
 ```bash
-npx plugins add NiazMorshed2007/jev-review
+npx plugins add teerasakw/jev-review
 ```
 
 Choose your coding client when prompted, restart it, and ask the agent to use `jev-review` while implementing a nontrivial change.
@@ -84,9 +90,9 @@ There is deliberately no synthetic “82/100” overall score. Dimension changes
 
 | Client | Plugin installation | Manual MCP available |
 | --- | --- | --- |
-| Claude Code | `npx plugins add NiazMorshed2007/jev-review --target claude-code` | Yes |
-| Codex | `npx plugins add NiazMorshed2007/jev-review --target codex` | Yes |
-| Cursor | `npx plugins add NiazMorshed2007/jev-review --target cursor` | Yes |
+| Claude Code | `npx plugins add teerasakw/jev-review --target claude-code` | Yes |
+| Codex | `npx plugins add teerasakw/jev-review --target codex` | Yes |
+| Cursor | `npx plugins add teerasakw/jev-review --target cursor` | Yes |
 | OpenCode | Manual configuration below | Yes |
 
 Every client starts the same bundled `dist/server.js` process locally over stdio.
@@ -94,7 +100,7 @@ Every client starts the same bundled `dist/server.js` process locally over stdio
 ### Claude Code
 
 ```bash
-npx plugins add NiazMorshed2007/jev-review --target claude-code
+npx plugins add teerasakw/jev-review --target claude-code
 ```
 
 Restart Claude Code and run `/mcp` to confirm that `jev-review` is connected.
@@ -114,7 +120,7 @@ claude mcp add --scope user jev-review -- node /absolute/path/to/jev-review/dist
 ### Codex
 
 ```bash
-npx plugins add NiazMorshed2007/jev-review --target codex
+npx plugins add teerasakw/jev-review --target codex
 ```
 
 Restart Codex and run `/mcp` to verify the connection.
@@ -125,13 +131,13 @@ Manual setup in `~/.codex/config.toml`:
 [mcp_servers.jev-review]
 command = "node"
 args = ["/absolute/path/to/jev-review/dist/server.js"]
-env_vars = ["JEV_API_KEY"]
+env_vars = ["NINEROUTER_API_KEY"]
 ```
 
 ### Cursor
 
 ```bash
-npx plugins add NiazMorshed2007/jev-review --target cursor
+npx plugins add teerasakw/jev-review --target cursor
 ```
 
 Restart Cursor and check **Settings → MCP**. The bundled skill is named `jev-review`; invoke it with `/jev-review` or leave it on **Agent Decides**.
@@ -146,7 +152,7 @@ Manual setup in `~/.cursor/mcp.json`:
       "command": "node",
       "args": ["/absolute/path/to/jev-review/dist/server.js"],
       "env": {
-        "JEV_API_KEY": "${env:JEV_API_KEY}"
+        "NINEROUTER_API_KEY": "${env:NINEROUTER_API_KEY}"
       }
     }
   }
@@ -156,13 +162,13 @@ Manual setup in `~/.cursor/mcp.json`:
 If Cursor is launched from the macOS Dock, it may not inherit variables from your shell profile. Make the already-exported key available to GUI applications before starting Cursor:
 
 ```bash
-launchctl setenv JEV_API_KEY "$JEV_API_KEY"
+launchctl setenv NINEROUTER_API_KEY "$NINEROUTER_API_KEY"
 ```
 
 Verify without printing the key:
 
 ```bash
-test -n "$(launchctl getenv JEV_API_KEY)" && echo "JEV_API_KEY is configured"
+test -n "$(launchctl getenv NINEROUTER_API_KEY)" && echo "NINEROUTER_API_KEY is configured"
 ```
 
 ### OpenCode
@@ -170,7 +176,7 @@ test -n "$(launchctl getenv JEV_API_KEY)" && echo "JEV_API_KEY is configured"
 OpenCode does not currently appear in the portable `plugins` installer targets. Point it at the same bundled server instead:
 
 ```bash
-git clone https://github.com/NiazMorshed2007/jev-review.git
+git clone https://github.com/teerasakw/jev-review.git
 cd jev-review
 opencode mcp add jev-review --global -- node "$PWD/dist/server.js"
 ```
@@ -187,7 +193,7 @@ For the full skill and MCP setup, add this to `~/.config/opencode/opencode.json`
         "type": "local",
         "command": ["node", "/absolute/path/to/jev-review/dist/server.js"],
         "environment": {
-          "JEV_API_KEY": "{env:JEV_API_KEY}"
+          "NINEROUTER_API_KEY": "{env:NINEROUTER_API_KEY}"
         }
       }
     }
@@ -216,7 +222,7 @@ Jev Review intentionally starts with one tool: `jev_review`.
 
 At least one current-context field is required. Callers should normally send the task and focused diff, adding complete files only when the surrounding implementation is necessary to understand the change. Jev Review never reads the repository automatically.
 
-Jev Review does not impose an additional character, token, or file-count limit. The Jev API currently enforces its own token ceiling: live `jev-latest` behavior indicates roughly 32,768 tokens for the submitted state, although this number is not published in the API documentation or OpenAPI schema and may change. When Jev returns `max_tokens_exceeded`, the server asks the agent to reduce unrelated context or split the change into coherent review slices.
+Jev Review does not impose an additional character, token, or file-count limit. The configured gateway or provider may enforce its own token ceiling. When it returns `max_tokens_exceeded`, the server asks the agent to reduce unrelated context or split the change into coherent review slices.
 
 The response contains:
 
@@ -299,7 +305,7 @@ jev-review/
 ## Development
 
 ```bash
-git clone https://github.com/NiazMorshed2007/jev-review.git
+git clone https://github.com/teerasakw/jev-review.git
 cd jev-review
 npm install
 npm run validate
@@ -315,15 +321,15 @@ npx plugins discover .
 claude plugin validate . --strict
 ```
 
-`npm run build` creates the committed `dist/server.js` bundle. Unit and MCP protocol tests use local fakes and do not consume Jev API quota; a live Jev call requires `JEV_API_KEY`.
+`npm run build` creates the committed `dist/server.js` bundle. Unit and MCP protocol tests use local fakes and do not consume Jev API quota; a live Jev call requires `NINEROUTER_API_KEY`.
 
 ## Security and privacy
 
-The local MCP process reads `JEV_API_KEY` and uses it only in the TLS Authorization header sent directly to `https://api.typesafe.ai/v1/systemone`. Jev Review never stores or logs the key.
+The local MCP process reads `NINEROUTER_API_KEY` and sends it in an Authorization header to `http://localhost:20128/v1/systemone`. This loopback HTTP hop is not TLS; keep the gateway bound to a trusted local interface. Jev Review never stores or logs the key.
 
-Only the `task`, `diff`, `files`, and `repositoryContext` explicitly supplied to `jev_review` are sent to Jev. `previousEvaluation` is compared locally and is not included in the current code context. No repository files are discovered or uploaded automatically.
+Only the `task`, `diff`, `files`, and `repositoryContext` explicitly supplied to `jev_review` are sent to the gateway. `previousEvaluation` is compared locally and is not included in the current code context. No repository files are discovered or uploaded automatically.
 
-Review context does leave your machine for TypeSafe's Jev API. Do not supply secrets or unrelated proprietary content, and review [TypeSafe's privacy policy](https://typesafe.ai/privacy) for the remote service's handling terms. Jev Review complements rather than replaces dedicated security tooling.
+The gateway may forward review context to its configured provider. Do not supply secrets or unrelated proprietary content, and review the gateway and provider privacy policies before use. Jev Review complements rather than replaces dedicated security tooling.
 
 ## License
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { getJevApiKey } from "../src/config/environment.js";
 import { JevApiError, JevClient, JEV_API_ENDPOINT, JEV_MODEL } from "../src/jev/client.js";
 
 const validResponse = {
@@ -27,6 +28,8 @@ describe("Jev client", () => {
     const client = new JevClient({ apiKey: "test-secret", fetchImplementation: fakeFetch });
     await client.evaluate({ diff: "+ change" }, {});
 
+    assert.equal(JEV_API_ENDPOINT, "http://localhost:20128/v1/systemone");
+    assert.equal(JEV_MODEL, "openrouter/typesafe/jev-1.13");
     assert.equal(observedUrl, JEV_API_ENDPOINT);
     assert.equal(observedAuthorization, "Bearer test-secret");
     assert.equal(observedBody.model, JEV_MODEL);
@@ -53,6 +56,11 @@ describe("Jev client", () => {
 
     assert.equal(attempts, 2);
     assert.deepEqual(delays, [250]);
+  });
+
+  it("reads only the gateway credential from the environment", () => {
+    assert.equal(getJevApiKey({ NINEROUTER_API_KEY: " gateway-key ", JEV_API_KEY: "old-key" }), "gateway-key");
+    assert.throws(() => getJevApiKey({ JEV_API_KEY: "old-key" }), /NINEROUTER_API_KEY/);
   });
 
   it("never starts without an API key", () => {

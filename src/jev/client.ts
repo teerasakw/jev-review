@@ -1,8 +1,8 @@
 import { jevResponseSchema, type JevResponse } from "./schema.js";
 import type { JevQuestions } from "../evaluation/questions.js";
 
-export const JEV_API_ENDPOINT = "https://api.typesafe.ai/v1/systemone";
-export const JEV_MODEL = "jev-latest";
+export const JEV_API_ENDPOINT = "http://localhost:20128/v1/systemone";
+export const JEV_MODEL = "openrouter/typesafe/jev-1.13";
 
 type FetchImplementation = typeof fetch;
 type SleepImplementation = (milliseconds: number) => Promise<void>;
@@ -34,7 +34,7 @@ export class JevClient {
 
   constructor(options: JevClientOptions) {
     const apiKey = options.apiKey.trim();
-    if (!apiKey) throw new JevApiError("JEV_API_KEY is not set. Export it before starting your coding agent.");
+    if (!apiKey) throw new JevApiError("NINEROUTER_API_KEY is not set. Export it before starting your coding agent.");
 
     this.#apiKey = apiKey;
     this.#fetch = options.fetchImplementation ?? fetch;
@@ -104,7 +104,7 @@ async function apiStatusError(response: Response): Promise<JevApiError> {
     );
   }
   if (status === 401) {
-    return new JevApiError("Jev rejected JEV_API_KEY. Check that the key is current and available to the MCP process.", status);
+    return new JevApiError("The local 9Router gateway rejected NINEROUTER_API_KEY. Check that the key is current and available to the MCP process.", status);
   }
   if (status === 422) {
     return new JevApiError("Jev rejected the supplied evaluation context or questions.", status);
